@@ -759,6 +759,34 @@ const PDFViewerApplication = {
         });
       });
 
+      const importInput = (this._importAnnotationsInput =
+        document.createElement("input"));
+      importInput.hidden = true;
+      importInput.type = "file";
+      importInput.accept = "application/json";
+      document.body.append(importInput);
+
+      importInput.addEventListener("change", evt => {
+        const file = evt.target.files?.[0];
+        if (!file) {
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const json = reader.result;
+            const data = JSON.parse(json);
+            for (const [id, value] of Object.entries(data)) {
+              this.pdfDocument?.annotationStorage.setValue(id, value);
+            }
+            await this.store?.set("annotations", json);
+          } catch (ex) {
+            console.error("Failed to import annotations", ex);
+          }
+        };
+        reader.readAsText(file);
+      });
+
       // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
       appConfig.mainContainer.addEventListener("dragover", function (evt) {
         for (const item of evt.dataTransfer.items) {
@@ -1167,9 +1195,7 @@ const PDFViewerApplication = {
     };
 
     return loadingTask.promise.then(
-      pdfDocument => {
-        this.load(pdfDocument);
-      },
+      pdfDocument => this.load(pdfDocument),
       reason => {
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
@@ -1249,6 +1275,32 @@ const PDFViewerApplication = {
     classList.remove("wait");
   },
 
+  async exportAnnotations() {
+    const { map } = this.pdfDocument?.annotationStorage.serializable || {};
+    if (!map) {
+      return;
+    }
+    const obj = Object.fromEntries(map);
+    for (const value of Object.values(obj)) {
+      for (const [k, v] of Object.entries(value)) {
+        if (ArrayBuffer.isView(v)) {
+          value[k] = Array.from(v);
+        }
+      }
+    }
+    const json = JSON.stringify(obj);
+    await this.store?.set("annotations", json);
+    this.downloadManager.downloadData(
+      json,
+      this._docFilename.replace(/\.pdf$/i, "_annotations.json"),
+      "application/json"
+    );
+  },
+
+  importAnnotations() {
+    this._importAnnotationsInput?.click();
+  },
+
   /**
    * Report the error; used for errors affecting loading and/or parsing of
    * the entire PDF document.
@@ -1323,7 +1375,7 @@ const PDFViewerApplication = {
     }
   },
 
-  load(pdfDocument) {
+  async load(pdfDocument) {
     this.pdfDocument = pdfDocument;
 
     pdfDocument.getDownloadInfo().then(({ length }) => {
@@ -1363,15 +1415,16 @@ const PDFViewerApplication = {
     }
     this.pdfDocumentProperties?.setDocument(pdfDocument);
 
+    this.store = new ViewHistory(pdfDocument.fingerprints[0]);
+    await this._loadAnnotationsFromStorage(pdfDocument);
+
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
     const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
 
     this.pdfThumbnailViewer?.setDocument(pdfDocument);
 
-    const storedPromise = (this.store = new ViewHistory(
-      pdfDocument.fingerprints[0]
-    ))
+    const storedPromise = this.store
       .getMultiple({
         page: null,
         zoom: DEFAULT_SCALE_VALUE,
@@ -1798,6 +1851,21 @@ const PDFViewerApplication = {
     };
   },
 
+  async _loadAnnotationsFromStorage(pdfDocument) {
+    const json = await this.store?.get("annotations", null);
+    if (!json) {
+      return;
+    }
+    try {
+      const data = JSON.parse(json);
+      for (const [id, value] of Object.entries(data)) {
+        pdfDocument.annotationStorage.setValue(id, value);
+      }
+    } catch (ex) {
+      console.error("Failed to parse annotations", ex);
+    }
+  },
+
   setInitialView(
     storedHash,
     { rotation, sidebarView, scrollMode, spreadMode } = {}
@@ -2003,6 +2071,8 @@ const PDFViewerApplication = {
     );
     eventBus._on("print", this.triggerPrinting.bind(this), opts);
     eventBus._on("download", this.downloadOrSave.bind(this), opts);
+    eventBus._on("exportannotations", this.exportAnnotations.bind(this), opts);
+    eventBus._on("importannotations", this.importAnnotations.bind(this), opts);
     eventBus._on("firstpage", () => (this.page = 1), opts);
     eventBus._on("lastpage", () => (this.page = this.pagesCount), opts);
     eventBus._on("nextpage", () => pdfViewer.nextPage(), opts);

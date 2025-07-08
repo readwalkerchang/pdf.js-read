@@ -35,6 +35,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  * @property {HTMLButtonElement} printButton - Button to print the document.
  * @property {HTMLButtonElement} downloadButton - Button to download the
  *   document.
+ * @property {HTMLButtonElement} exportAnnotationsButton - Button to export annotations.
+ * @property {HTMLButtonElement} importAnnotationsButton - Button to import annotations.
  * @property {HTMLAnchorElement} viewBookmarkButton - Button to obtain a
  *   bookmark link to the current location in the document.
  * @property {HTMLButtonElement} firstPageButton - Button to go to the first
@@ -72,6 +74,16 @@ class SecondaryToolbar {
       },
       { element: options.printButton, eventName: "print", close: true },
       { element: options.downloadButton, eventName: "download", close: true },
+      {
+        element: options.exportAnnotationsButton,
+        eventName: "exportannotations",
+        close: true,
+      },
+      {
+        element: options.importAnnotationsButton,
+        eventName: "importannotations",
+        close: true,
+      },
       { element: options.viewBookmarkButton, eventName: null, close: true },
       { element: options.firstPageButton, eventName: "firstpage", close: true },
       { element: options.lastPageButton, eventName: "lastpage", close: true },

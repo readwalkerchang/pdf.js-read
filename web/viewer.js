@@ -67,6 +67,8 @@ function getViewerConfiguration() {
         "editorSignatureParamsToolbar"
       ),
       download: document.getElementById("downloadButton"),
+      exportAnnotations: document.getElementById("exportAnnotations"),
+      importAnnotations: document.getElementById("importAnnotations"),
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
@@ -78,6 +80,12 @@ function getViewerConfiguration() {
           : null,
       printButton: document.getElementById("secondaryPrint"),
       downloadButton: document.getElementById("secondaryDownload"),
+      exportAnnotationsButton: document.getElementById(
+        "secondaryExportAnnotations"
+      ),
+      importAnnotationsButton: document.getElementById(
+        "secondaryImportAnnotations"
+      ),
       viewBookmarkButton: document.getElementById("viewBookmark"),
       firstPageButton: document.getElementById("firstPage"),
       lastPageButton: document.getElementById("lastPage"),
