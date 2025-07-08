@@ -41,6 +41,7 @@ import {
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
+ * @property {HTMLButtonElement} exportAnnotations - Button to export annotations.
  */
 
 class Toolbar {
@@ -67,6 +68,7 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      { element: options.exportAnnotations, eventName: "exportannotations" },
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",
